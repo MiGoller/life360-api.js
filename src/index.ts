@@ -91,7 +91,7 @@ export class Life360Handler {
         if (!requestConfig) throw new Error("requestConfig is missing or empty!");
         try {
             return await axios.request(requestConfig);
-        } catch (error) {
+        } catch (error: any) {
             if (error.response) 
                 throw new Error(`${error.response.status} - ${error.response.statusText}`);
             else
@@ -128,7 +128,7 @@ export class Life360Handler {
                 },
                 responseType: "json"
             });
-        } catch (error) { 
+        } catch (error: any) { 
             if (error.response) 
                 throw new Error(`${error.response.status} - ${error.response.statusText}`);
             else
