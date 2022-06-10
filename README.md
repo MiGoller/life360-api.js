@@ -46,6 +46,10 @@ main();
 
 ## Changelog
 
+0.1.2
+
+- (MiGoller) Bugfix for issue [#7](https://github.com/MiGoller/life360-api.js/issues/7) after Life360 updated API
+
 0.1.0
 
 - (MiGoller) First public release. Enjoy ;-)  
