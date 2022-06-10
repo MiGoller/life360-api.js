@@ -3,16 +3,16 @@
  *
  * Author: MiGoller
  * 
- * Copyright (c) 2021 MiGoller
+ * Copyright (c) 2022 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 /**
- * Hard-coded "CLIENT_SECRET" in https://www.life360.com/circles/scripts/ef464e2a.scripts.js !
+ * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
- const LIFE360_CLIENT_SECRET = "U3dlcUFOQWdFVkVoVWt1cGVjcmVrYXN0ZXFhVGVXckFTV2E1dXN3MzpXMnZBV3JlY2hhUHJlZGFoVVJhZ1VYYWZyQW5hbWVqdQ==";
+ const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
 
 /**
  * The Life360 API URIs.
@@ -20,8 +20,8 @@ import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
  * - circles URL
  */
 const ENDPOINT = {
-    "LOGIN": "https://www.life360.com/v3/oauth2/token.json",
-    "CIRCLES": "https://www.life360.com/v3/circles"
+    "LOGIN": "https://api-cloudfront.life360.com/v3/oauth2/token.json",
+    "CIRCLES": "https://api-cloudfront.life360.com/v3/circles"
 };
 
 /**
@@ -104,11 +104,6 @@ export class Life360Handler {
      * @returns Life360 `Auth` object
      */
     async login(): Promise<any> {
-        // this.username = username || "";
-        // this.password = password || "";
-        // this.phonenumber = phonenumber || "";
-        // this.countryCode = countryCode || 1;
-
         //  Reset access token
         this.auth = {
             access_token: "",
@@ -117,14 +112,22 @@ export class Life360Handler {
 
         let response: any;
         
+        const authData = {
+            grant_type: "password",
+            username: this.username,
+            password: this.password,
+            countryCode: this.countryCode,
+            phone: this.phonenumber
+        };
+
         try {
             response = await axios.request({
                 url: ENDPOINT.LOGIN,
                 method: "POST",
-                data: `countryCode=${this.countryCode}&username=${this.username}&phone=${this.phonenumber}&password=${this.password}&grant_type=password`,
+                data: authData,
                 headers: {
                     "Authorization": `Authorization: Basic ${LIFE360_CLIENT_SECRET}`,
-                    "Content-Type" : "application/x-www-form-urlencoded"
+                    "Content-Type" : "application/json"
                 },
                 responseType: "json"
             });
