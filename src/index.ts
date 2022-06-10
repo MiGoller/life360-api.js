@@ -3,16 +3,16 @@
  *
  * Author: MiGoller
  * 
- * Copyright (c) 2021 MiGoller
+ * Copyright (c) 2022 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 /**
- * Hard-coded "CLIENT_SECRET" in https://www.life360.com/circles/scripts/ef464e2a.scripts.js !
+ * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
- const LIFE360_CLIENT_SECRET = "U3dlcUFOQWdFVkVoVWt1cGVjcmVrYXN0ZXFhVGVXckFTV2E1dXN3MzpXMnZBV3JlY2hhUHJlZGFoVVJhZ1VYYWZyQW5hbWVqdQ==";
+ const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
 
 /**
  * The Life360 API URIs.
