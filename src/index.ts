@@ -8,11 +8,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+import { v4 as uuidv4} from "uuid";
 
 /**
  * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
- const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
+const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
+const DEFAULT_CLIENT_VERSION = "22.6.0.532";
+const DEFAULT_USER_AGENT = "SafetyMapKoko";
 
 /**
  * The Life360 API URIs.
@@ -33,6 +36,9 @@ export class Life360Handler {
     private phonenumber: string | undefined;
     private countryCode: number | undefined;
     private auth: { access_token: string; token_type: string; };
+    private deviceId: string | undefined;
+    private clientVersion: string | undefined;
+    private userAgent: string | undefined;
 
     /**
      * Creates a new Life360 handler.
@@ -44,7 +50,7 @@ export class Life360Handler {
      * @param phonenumber Phonenumber w/o countrycode for login
      * @param countryCode Phonenumber's countrycode with the plus (+)
      */
-    constructor(username?: string, password?: string, phonenumber?: string, countryCode?: number) {
+    constructor(username?: string, password?: string, phonenumber?: string, countryCode?: number, deviceId?: string, clientVersion?: string, userAgent?: string) {
         //  Check credentials
         if ((username && password) || (countryCode && phonenumber && password)) {
             //  Initialize properties
@@ -62,6 +68,21 @@ export class Life360Handler {
             // Too few credentials
             throw new Error("You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` to login.");
         }
+
+        //  Generate temp. device ID?
+        this.deviceId = deviceId || uuidv4();
+        // if (deviceId) {
+        //     this.deviceId = uuidParse(this.deviceId);
+        // }
+        // else {
+        //     this.deviceId = uuidv4();
+        // }
+
+        //  Set custom client version?
+        this.clientVersion = clientVersion || DEFAULT_CLIENT_VERSION;
+
+        //  Set user agent
+        this.userAgent = userAgent || DEFAULT_USER_AGENT;
     }
 
     /**
@@ -76,7 +97,9 @@ export class Life360Handler {
         return {
             url: url,
             headers: {
-                "Authorization": `${this.auth.token_type} ${this.auth.access_token}`
+                "Authorization": `${this.auth.token_type} ${this.auth.access_token}`,
+                "X-Device-ID": this.deviceId,
+                "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`
             },
             responseType: "json"
         }
@@ -127,7 +150,9 @@ export class Life360Handler {
                 data: authData,
                 headers: {
                     "Authorization": `Authorization: Basic ${LIFE360_CLIENT_SECRET}`,
-                    "Content-Type" : "application/json"
+                    "Content-Type" : "application/json",
+                    "X-Device-ID": this.deviceId,
+                    "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`
                 },
                 responseType: "json"
             });
@@ -147,6 +172,7 @@ export class Life360Handler {
         this.auth = {
             access_token: response.data["access_token"],
             token_type: response.data["token_type"]
+
         };
 
         return this.auth;
