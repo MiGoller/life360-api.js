@@ -36,9 +36,9 @@ export class Life360Handler {
     private phonenumber: string | undefined;
     private countryCode: number | undefined;
     private auth: { access_token: string; token_type: string; };
-    private deviceId: string | undefined;
-    private clientVersion: string | undefined;
-    private userAgent: string | undefined;
+    private deviceId: string = uuidv4();
+    private clientVersion: string = DEFAULT_CLIENT_VERSION;
+    private userAgent: string = DEFAULT_USER_AGENT;
 
     /**
      * Creates a new Life360 handler.

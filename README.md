@@ -46,6 +46,10 @@ main();
 
 ## Changelog
 
+### 0.1.4
+
+- (MiGoller) [Upgrade axios from 0.21.4 to 0.27.2](https://github.com/MiGoller/life360-api.js/pull/12)
+
 ### 0.1.3
 
 - (MiGoller) Added new Life360 headers, custom user agent and device id.
