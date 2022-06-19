@@ -46,6 +46,11 @@ main();
 
 ## Changelog
 
+### 0.2.0
+
+- (MiGoller) [Add feature to get members' location](https://github.com/MiGoller/life360-api.js/issues/13)
+- (MiGoller) [Add a feature to force a member's device to update it's location data](https://github.com/MiGoller/life360-api.js/issues/14)
+
 ### 0.1.4
 
 - (MiGoller) [Upgrade axios from 0.21.4 to 0.27.2](https://github.com/MiGoller/life360-api.js/pull/12)
