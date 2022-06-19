@@ -276,4 +276,21 @@ export class Life360Handler {
             return { error };
         }
     }
+
+    /**
+     * Get a Life360 circle's members' location data.
+     * @param circleId The Life360 circle's unique identifier
+     * @returns Array of Life360 location objects
+     */
+    async getCircleMembersLocation(circleId: string): Promise<any> {
+        try {
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`));
+
+            if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Places object is missing.");
+
+            return response.data.locations;
+        } catch (error) {
+            return { error };
+        }
+    }
 }
