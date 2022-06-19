@@ -88,13 +88,15 @@ export class Life360Handler {
     /**
      * Creates an Life360 API request configuration object for Axios
      * @param url The request's `url`
+     * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config).
      * @returns An AxiosRequestConfig to match Life360 API requirements
      */
-    getApiRequestConfig(url: string): AxiosRequestConfig {
+    getApiRequestConfig(url: string, method = "get"): AxiosRequestConfig {
         if (!url) throw new Error("URL is missing or empty!");
         if (!this.isLoggedIn()) throw new Error("Not logged in. Please log in to Life360 first.");
 
         return {
+            method: method,
             url: url,
             headers: {
                 "Authorization": `${this.auth.token_type} ${this.auth.access_token}`,
@@ -258,6 +260,47 @@ export class Life360Handler {
     }
 
     /**
+     * Get a Life360 circle's members' location data.
+     * @param circleId The Life360 circle's unique identifier
+     * @returns Array of Life360 location objects
+     */
+     async getCircleMembersLocation(circleId: string): Promise<any> {
+        try {
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`));
+
+            if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Locations object is missing.");
+
+            return response.data.locations;
+        } catch (error) {
+            return { error };
+        }
+    }
+
+    /**
+     * Request a location update for a circle member
+     * @param circleId The Life360 circle's unique identifier
+     * @param userId The Life360 member's unique identifier
+     * @returns `ìsPollable` and `requestId` .
+     */
+    async requestUserLocationUpdate(circleId: string, userId: string): Promise<any> {
+        try {
+            //  Build POST request config
+            const requestConfig = this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/${userId}/request`, "post");
+            requestConfig.data = {
+                "type": "location"
+            };
+
+            const response = await this.apiRequest(requestConfig);
+
+            if ((!response.data) || (!response.data.requestId)) throw new Error("Suspicious API response: Object is missing.");
+
+            return response.data;
+        } catch (error) {
+            return { error };
+        }
+    }
+
+    /**
      * Get a Life360 circle's places
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 place objects
@@ -272,23 +315,6 @@ export class Life360Handler {
             // // console.log(response);
             // if (response.data) return response.data;
             // throw new Error(JSON.stringify(response));
-        } catch (error) {
-            return { error };
-        }
-    }
-
-    /**
-     * Get a Life360 circle's members' location data.
-     * @param circleId The Life360 circle's unique identifier
-     * @returns Array of Life360 location objects
-     */
-    async getCircleMembersLocation(circleId: string): Promise<any> {
-        try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`));
-
-            if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Places object is missing.");
-
-            return response.data.locations;
         } catch (error) {
             return { error };
         }
