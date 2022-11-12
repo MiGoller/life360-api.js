@@ -13,7 +13,7 @@ import { v4 as uuidv4} from "uuid";
 /**
  * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
+const LIFE360_CLIENT_SECRET = "U3dlcUFOQWdFVkVoVWt1cGVjcmVrYXN0ZXFhVGVXckFTV2E1dXN3MzpXMnZBV3JlY2hhUHJlZGFoVVJhZ1VYYWZyQW5hbWVqdQ==";
 const DEFAULT_CLIENT_VERSION = "22.6.0.532";
 const DEFAULT_USER_AGENT = "SafetyMapKoko";
 
@@ -23,8 +23,8 @@ const DEFAULT_USER_AGENT = "SafetyMapKoko";
  * - circles URL
  */
 const ENDPOINT = {
-    "LOGIN": "https://api-cloudfront.life360.com/v3/oauth2/token.json",
-    "CIRCLES": "https://api-cloudfront.life360.com/v3/circles"
+    "LOGIN": "https://www.life360.com/v3/oauth2/token.json",
+    "CIRCLES": "https://www.life360.com/v3/circles"
 };
 
 /**
