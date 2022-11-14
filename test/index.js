@@ -37,7 +37,7 @@ async function main() {
             myClient.login()
             .then(function(l360auth) {
                 //  We're logged in
-                console.dir(l360auth);
+                console.dir(l360auth, { depth: 5 });
 
                 //  Get Circles
                 console.log("- Getting circles ...");
