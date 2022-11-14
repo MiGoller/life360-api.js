@@ -230,14 +230,15 @@ export interface MemberPreferences {
 }
 
 /**
- * Life360 type based classes
+ * Life360 session
  */
 export class Session extends TypeBase implements Session {
     constructor(responseData: any) {
         super(responseData);
 
-        this.onboarding = ( responseData.onboarding == 1);
-        this.user = new User(responseData.user);
+        //  Parsing and type-converting some properties
+        if (responseData.onboarding != undefined) this.onboarding = ( responseData.onboarding == 1);
+        if (responseData.user != undefined) this.user = new User(responseData.user);
     }
 }
 
@@ -248,10 +249,10 @@ export class User extends TypeBase implements User {
     constructor(responseData: any) {
         super(responseData);
 
-        this.created = Date.parse(responseData.created);
-        this.settings = new UserSettings(responseData.settings);
-
-        this.communications = ParseCommuncations(responseData.communications);
+        //  Parsing and type-converting some properties
+        if (responseData.created != undefined) this.created = Date.parse(responseData.created);
+        if (responseData.settings != undefined) this.settings = new UserSettings(responseData.settings);
+        if (responseData.communications != undefined) this.communications = ParseCommuncations(responseData.communications);
     }
 }
 
@@ -262,8 +263,9 @@ export class UserSettings extends TypeBase implements UserSettings {
     constructor(responseData: any) {
         super(responseData);
 
-        this.map = new MapSettings(responseData.map);
-        this.alerts = new AlertsSettings(responseData.alerts);
+        //  Parsing and type-converting some properties
+        if (responseData.map != undefined) this.map = new MapSettings(responseData.map);
+        if (responseData.alerts != undefined) this.alerts = new AlertsSettings(responseData.alerts);
     }
 }
 
@@ -274,16 +276,17 @@ export class MapSettings extends TypeBase implements MapSettings {
     constructor(responseData: any) {
         super({});
 
-        this.police = ( responseData.police == "1" );
-        this.fire = ( responseData.fire == "1" );
-        this.hospital = ( responseData.hospital == "1" );
-        this.sexOffenders = ( responseData.sexOffenders == "1" );
-        this.crime = ( responseData.crime == "1" );
-        this.crimeDuration = `${responseData.crimeDuration}`;
-        this.family = ( responseData.family == "1" );
-        this.advisor = ( responseData.advisor == "1" );
-        this.placeRadius = ( responseData.placeRadius == "1" );
-        this.memberRadius = ( responseData.memberRadius == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.police != undefined) this.police = ( responseData.police == "1" );
+        if (responseData.fire != undefined) this.fire = ( responseData.fire == "1" );
+        if (responseData.hospital != undefined) this.hospital = ( responseData.hospital == "1" );
+        if (responseData.sexOffenders != undefined) this.sexOffenders = ( responseData.sexOffenders == "1" );
+        if (responseData.crime != undefined) this.crime = ( responseData.crime == "1" );
+        if (responseData.crimeDuration != undefined) this.crimeDuration = `${responseData.crimeDuration}`;
+        if (responseData.family != undefined) this.family = ( responseData.family == "1" );
+        if (responseData.advisor != undefined) this.advisor = ( responseData.advisor == "1" );
+        if (responseData.placeRadius != undefined) this.placeRadius = ( responseData.placeRadius == "1" );
+        if (responseData.memberRadius != undefined) this.memberRadius = ( responseData.memberRadius == "1" );
     }
 }
 
@@ -294,8 +297,9 @@ export class AlertsSettings extends TypeBase implements AlertsSettings {
     constructor(responseData: any) {
         super({});
 
-        this.crime = ( responseData.crime == "1" );
-        this.sound = ( responseData.sound == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.crime != undefined) this.crime = ( responseData.crime == "1" );
+        if (responseData.sound != undefined) this.sound = ( responseData.sound == "1" );
     }
 }
 
@@ -315,16 +319,17 @@ export class Circle extends TypeBase implements Circle {
     constructor(responseData: any) {
         super(responseData);
 
-        this.createdAt = Number.parseInt(responseData.createdAt);
-        this.memberCount = Number.parseInt(responseData.memberCount);
-        this.unreadMessages = Number.parseInt(responseData.unreadMessages);
-        this.unreadNotifications = Number.parseInt(responseData.unreadNotifications);
+        //  Parsing and type-converting some properties
+        if (responseData.createdAt != undefined) this.createdAt = Number.parseInt(responseData.createdAt);
+        if (responseData.memberCount != undefined) this.memberCount = Number.parseInt(responseData.memberCount);
+        if (responseData.unreadMessages != undefined) this.unreadMessages = Number.parseInt(responseData.unreadMessages);
+        if (responseData.unreadNotifications != undefined) this.unreadNotifications = Number.parseInt(responseData.unreadNotifications);
 
-        if (responseData.features) this.features = new CircleFeatures(responseData.features);
+        //  Has to parse features?
+        if (responseData.features != undefined) this.features = new CircleFeatures(responseData.features);
 
-        if (responseData.members) {
-            this.members = ParseMembers(responseData.members);
-        }
+        //  Has to parse members?
+        if (responseData.members != undefined) this.members = ParseMembers(responseData.members);
     }
 }
 
@@ -335,9 +340,10 @@ export class CircleFeatures extends TypeBase implements CircleFeatures {
     constructor(responseData: any) {
         super(responseData);
 
-        this.premium = ( responseData.premium == "1" );
-        this.priceMonth = Number.parseFloat(responseData.priceMonth);
-        this.priceYear = Number.parseFloat(responseData.priceYear);
+        //  Parsing and type-converting some properties
+        if (responseData.premium != undefined) this.premium = ( responseData.premium == "1" );
+        if (responseData.priceMonth != undefined) this.priceMonth = Number.parseFloat(responseData.priceMonth);
+        if (responseData.priceYear != undefined) this.priceYear = Number.parseFloat(responseData.priceYear);
     }
 }
 
@@ -348,19 +354,16 @@ export class Member extends TypeBase implements Member {
     constructor(responseData: any) {
         super(responseData);
 
-        this.createdAt = Number.parseInt(responseData.createdAt);
-        this.isAdmin = ( responseData.isAdmin == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.createdAt != undefined) this.createdAt = Number.parseInt(responseData.createdAt);
+        if (responseData.isAdmin != undefined) this.isAdmin = ( responseData.isAdmin == "1" );
+        
+        if (responseData.features != undefined) this.features = new MemberFeatures(responseData.features);
+        if (responseData.issues != undefined) this.issues = new MemberIssues(responseData.issues);
+        if (responseData.location != undefined) this.location = new Location(responseData.location);
 
-        if (responseData.features) this.features = new MemberFeatures(responseData.features);
-
-        if (responseData.issues) this.issues = new MemberIssues(responseData.issues);
-
-        if (responseData.location) this.location = new Location(responseData.location);
-
-        if (responseData.communications) {
-            this.communications = ParseCommuncations(responseData.communications);
-        }
-
+        //  Has to parse communication details ?
+        if (responseData.communications != undefined) this.communications = ParseCommuncations(responseData.communications);
     }
 }
 
@@ -371,14 +374,15 @@ export class MemberFeatures extends TypeBase implements MemberFeatures {
     constructor(responseData: any) {
         super({});
 
-        this.device = ( responseData.device == "1" );
-        this.smartphone = ( responseData.smartphone == "1" );
-        this.nonSmartphoneLocating = ( responseData.nonSmartphoneLocating == "1" );
-        this.geofencing = ( responseData.geofencing == "1" );
-        this.shareLocation = ( responseData.shareLocation == "1" );
-        this.disconnected = ( responseData.disconnected == "1" );
-        this.pendingInvite = ( responseData.pendingInvite == "1" );
-        this.mapDisplay = ( responseData.mapDisplay == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.device != undefined) this.device = ( responseData.device == "1" );
+        if (responseData.smartphone != undefined) this.smartphone = ( responseData.smartphone == "1" );
+        if (responseData.nonSmartphoneLocating != undefined) this.nonSmartphoneLocating = ( responseData.nonSmartphoneLocating == "1" );
+        if (responseData.geofencing != undefined) this.geofencing = ( responseData.geofencing == "1" );
+        if (responseData.shareLocation != undefined) this.shareLocation = ( responseData.shareLocation == "1" );
+        if (responseData.disconnected != undefined) this.disconnected = ( responseData.disconnected == "1" );
+        if (responseData.pendingInvite != undefined) this.pendingInvite = ( responseData.pendingInvite == "1" );
+        if (responseData.mapDisplay != undefined) this.mapDisplay = ( responseData.mapDisplay == "1" );
     }
 }
 
@@ -389,8 +393,9 @@ export class MemberIssues extends TypeBase implements MemberIssues {
     constructor(responseData: any) {
         super(responseData);
 
-        this.disconnected = ( responseData.disconnected == "1" );
-        this.troubleshooting = ( responseData.troubleshooting == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.disconnected != undefined) this.disconnected = ( responseData.disconnected == "1" );
+        if (responseData.troubleshooting != undefined) this.troubleshooting = ( responseData.troubleshooting == "1" );
     }
 }
 
@@ -401,16 +406,17 @@ export class Location extends TypeBase implements Location {
     constructor(responseData: any) {
         super(responseData);
 
-        this.latitude = Number.parseFloat(responseData.latitude);
-        this.longitude = Number.parseFloat(responseData.longitude);
-        this.accuracy = Number.parseInt(responseData.accuracy);
-        this.endTimestamp = Number.parseInt(responseData.endTimestamp);
-        this.timestamp = Number.parseInt(responseData.timestamp);
-        this.inTransit = ( responseData.inTransit == "1" );
-        this.battery = Number.parseInt(responseData.battery);
-        this.wifiState = ( responseData.wifiState == "1" );
-        this.isDriving = ( responseData.isDriving == "1" );
-        this.charge = ( responseData.charge == "1" );
+        //  Parsing and type-converting some properties
+        if (responseData.latitude != undefined) this.latitude = Number.parseFloat(responseData.latitude);
+        if (responseData.longitude != undefined) this.longitude = Number.parseFloat(responseData.longitude);
+        if (responseData.accuracy != undefined) this.accuracy = Number.parseInt(responseData.accuracy);
+        if (responseData.endTimestamp != undefined) this.endTimestamp = Number.parseInt(responseData.endTimestamp);
+        if (responseData.timestamp != undefined) this.timestamp = Number.parseInt(responseData.timestamp);
+        if (responseData.inTransit != undefined) this.inTransit = ( responseData.inTransit == "1" );
+        if (responseData.battery != undefined) this.battery = Number.parseInt(responseData.battery);
+        if (responseData.wifiState != undefined) this.wifiState = ( responseData.wifiState == "1" );
+        if (responseData.isDriving != undefined) this.isDriving = ( responseData.isDriving == "1" );
+        if (responseData.charge != undefined) this.charge = ( responseData.charge == "1" );
     }
 }
 
@@ -420,9 +426,11 @@ export class Location extends TypeBase implements Location {
 export class Place extends TypeBase implements Place {
     constructor(responseData: any) {
         super(responseData);
-        this.latitude = Number.parseFloat(responseData.latitude);
-        this.longitude = Number.parseFloat(responseData.longitude);
-        this.radius = Number.parseFloat(responseData.radius);
+        
+        //  Parsing and type-converting some properties
+        if (responseData.latitude != undefined) this.latitude = Number.parseFloat(responseData.latitude);
+        if (responseData.longitude != undefined) this.longitude = Number.parseFloat(responseData.longitude);
+        if (responseData.radius != undefined) this.radius = Number.parseFloat(responseData.radius);
     }
 }
 
@@ -432,7 +440,9 @@ export class Place extends TypeBase implements Place {
 export class LocationRequest extends TypeBase implements LocationRequest {
     constructor(responseData: any) {
         super(responseData);
-        this.isPollable = ( responseData.isPollable == "1" );
+        
+        //  Parsing and type-converting some properties
+        if (responseData.isPollable != undefined) this.isPollable = ( responseData.isPollable == "1" );
     }
 }
 
@@ -442,10 +452,12 @@ export class LocationRequest extends TypeBase implements LocationRequest {
 export class MemberPreferences extends TypeBase implements MemberPreferences {
     constructor(responseData: any) {
         super(responseData);
-        this.email = ( responseData.email == "1" );
-        this.sms = ( responseData.sms == "1" );
-        this.push = ( responseData.push == "1" );
-        this.shareLocation = ( responseData.shareLocation == "1" );
+        
+        //  Parsing and type-converting some properties
+        if (responseData.email != undefined) this.email = ( responseData.email == "1" );
+        if (responseData.sms != undefined) this.sms = ( responseData.sms == "1" );
+        if (responseData.push != undefined) this.push = ( responseData.push == "1" );
+        if (responseData.shareLocation != undefined) this.shareLocation = ( responseData.shareLocation == "1" );
     }
 }
 
