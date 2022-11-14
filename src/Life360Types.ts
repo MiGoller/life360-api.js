@@ -87,10 +87,6 @@ export interface MapSettings {
     memberRadius:  boolean;
 }
 
-// export interface Circles {
-//     circles: Circle[];
-// }
-
 /**
  * Life360 circle
  */
@@ -119,53 +115,6 @@ export interface CircleFeatures {
     priceYear:           number;
     skuTier:             null;
 }
-
-// export interface Member {
-//     features:       MemberFeatures;
-//     issues:         Issues;
-//     location:       Location;
-//     communications: Communication[];
-//     medical:        null;
-//     relation:       null;
-//     createdAt:      string;
-//     activity:       null;
-//     id:             string;
-//     firstName:      string;
-//     lastName:       string;
-//     isAdmin:        string;
-//     avatar:         null | string;
-//     pinNumber:      null;
-//     loginEmail:     string;
-//     loginPhone:     string;
-// }
-
-// export interface Communication {
-//     channel: string;
-//     value:   string;
-//     type:    null | string;
-// }
-
-// export interface MemberFeatures {
-//     device:                string;
-//     smartphone:            string;
-//     nonSmartphoneLocating: string;
-//     geofencing:            string;
-//     shareLocation:         string;
-//     shareOffTimestamp:     null;
-//     disconnected:          string;
-//     pendingInvite:         string;
-//     mapDisplay:            string;
-// }
-
-// export interface Issues {
-//     disconnected:    string;
-//     type:            null;
-//     status:          null;
-//     title:           null;
-//     dialog:          null;
-//     action:          null;
-//     troubleshooting: string;
-// }
 
 /**
  * Life360 location detail
@@ -197,37 +146,6 @@ export interface Location {
     userId:         null | string;
 }
 
-// export interface Location {
-//     latitude:       string;
-//     longitude:      string;
-//     accuracy:       string;
-//     startTimestamp: number;
-//     endTimestamp:   string;
-//     since:          number;
-//     timestamp:      string;
-//     name:           string;
-//     placeType:      null;
-//     source:         string;
-//     sourceId:       string;
-//     address1:       string;
-//     address2:       string;
-//     shortAddress:   string;
-//     inTransit:      string;
-//     tripId:         null;
-//     driveSDKStatus: null;
-//     battery:        string;
-//     charge:         string;
-//     wifiState:      string;
-//     speed:          number;
-//     isDriving:      string;
-//     userActivity:   null;
-// }
-
-
-// export interface Members {
-//     members: Member[];
-// }
-
 /**
  * Life360 circle member
  */
@@ -249,12 +167,6 @@ export interface Member {
     loginEmail:     string;
     loginPhone:     string;
 }
-
-// export interface Communication {
-//     channel: string;
-//     value:   string;
-//     type:    null | string;
-// }
 
 /**
  * Life360 circle member's features
@@ -283,10 +195,6 @@ export interface MemberIssues {
     action:          null;
     troubleshooting: boolean;
 }
-
-// export interface Places {
-//     places: Place[];
-// }
 
 /**
  * Life360 circle place
@@ -400,14 +308,6 @@ export class Communication extends TypeBase implements Communication {
     }
 }
 
-// export class Circles extends TypeBase implements Circles {
-//     constructor(responseData: any) {
-//         super({});
-
-//         this.circles = ParseCircles(responseData.circles);
-//     }
-// }
-
 /**
  * Life360 circle
  */
@@ -440,12 +340,6 @@ export class CircleFeatures extends TypeBase implements CircleFeatures {
         this.priceYear = Number.parseFloat(responseData.priceYear);
     }
 }
-
-// export class Members extends TypeBase implements Members {
-//     constructor(responseData: any) {
-//         super(responseData);
-//     }
-// }
 
 /**
  * Life360 circle member
@@ -519,20 +413,6 @@ export class Location extends TypeBase implements Location {
         this.charge = ( responseData.charge == "1" );
     }
 }
-
-// export class Members extends TypeBase implements Members {
-//     constructor(responseData: any) {
-//         super(responseData);
-//     }
-// }
-
-// export class Places extends TypeBase implements Places {
-//     constructor(responseData: any) {
-//         super({});
-
-//         this.places = ParsePlaces(responseData.places);
-//     }
-// }
 
 /**
  * Life360 circle's place

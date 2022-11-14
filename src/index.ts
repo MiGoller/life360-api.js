@@ -116,9 +116,7 @@ export class Life360Handler {
         this.userAgent = userAgent || DEFAULT_USER_AGENT;
 
         //  Set Life360 API endpoint
-        // this.apiEndpoint = (!apiEndpoint ? DEFAULT_API_ENDPOINT : apiEndpoint);
         this.apiEndpoint = apiEndpoint || DEFAULT_API_ENDPOINT;
-        console.log(`${apiEndpoint} --> ${this.apiEndpoint}`);
     }
 
     /**
@@ -203,7 +201,6 @@ export class Life360Handler {
         if (!requestConfig) throw new Error("requestConfig is missing or empty!");
         try {
             this.lastApiResponse = await axios.request(requestConfig);
-            // return await axios.request(requestConfig);
             return this.lastApiResponse;
         } catch (error: any) {
             this.lastError = error;
@@ -300,7 +297,6 @@ export class Life360Handler {
      * @returns 
      */
     isLoggedIn(): boolean {
-        // return this.auth.access_token > "";
         return (this.life360session != undefined) && (this.life360session.access_token > "");
     }
 
@@ -316,16 +312,10 @@ export class Life360Handler {
 
             if (response.data.circles.length == 0) console.warn("No circles in your Life360.");
 
-            // console.log(response);
-
-            // return response.data.circles;
-            // const myCircles = new Life360.Circles(response.data);
-            // return myCircles.circles;
             return Life360.ParseCircles(response.data.circles);
 
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -349,7 +339,6 @@ export class Life360Handler {
             throw new Error(JSON.stringify(response));
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -365,16 +354,9 @@ export class Life360Handler {
 
             if ((!response.data) || (!response.data.members)) throw new Error("Suspicious API response: Members object is missing.");
 
-            // return response.data.members;
-            // const myMembers = new Life360.Members(response.data);
-            // return myMembers.members;
             return Life360.ParseMembers(response.data.members);
-
-            // if (response.data) return response.data;
-            // throw new Error(JSON.stringify(response));
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -390,11 +372,9 @@ export class Life360Handler {
 
             if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Locations object is missing.");
 
-            // return response.data.locations;
             return Life360.ParseLocations(response.data.locations);
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -417,12 +397,9 @@ export class Life360Handler {
 
             if ((!response.data) || (!response.data.requestId)) throw new Error("Suspicious API response: Object is missing.");
 
-            // return response.data;
             return new Life360.LocationRequest(response.data);
-
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -438,18 +415,9 @@ export class Life360Handler {
 
             if ((!response.data) || (!response.data.places)) throw new Error("Suspicious API response: Places object is missing.");
 
-            // return response.data.places;
-            // const myPlaces = new Life360.Places(response.data);
-            // return myPlaces.places;
-
             return Life360.ParsePlaces(response.data.places);
-
-            // // console.log(response);
-            // if (response.data) return response.data;
-            // throw new Error(JSON.stringify(response));
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
@@ -471,7 +439,6 @@ export class Life360Handler {
             throw new Error(JSON.stringify(response));
         } catch (error) {
             this.lastError = error;
-            // return { error };
             throw error;
         }
     }
