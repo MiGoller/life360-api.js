@@ -235,10 +235,24 @@ export class Life360Handler {
      * @param requestConfig An `AxiosRequestConfig`
      * @returns The API's response object
      */
-    async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+    async apiRequest(requestConfig: AxiosRequestConfig, checkResponseDataProperty?: string): Promise<AxiosResponse> {
         if (!requestConfig) throw new Error("requestConfig is missing or empty!");
         try {
             this.lastApiResponse = await axios.request(requestConfig);
+
+            //  Check for required response data property?
+            if (checkResponseDataProperty != undefined) {
+                if ((!this.lastApiResponse.data) || (!this.lastApiResponse.data[checkResponseDataProperty])) {
+                    //  Hopefully this will be a suspicious API response missing the data.
+                    throw {
+                        status: 406,
+                        statusText: "Not Acceptable",
+                        data: this.lastApiResponse.data
+                    };
+                }
+            }
+
+            //  Return the response
             return this.lastApiResponse;
         } catch (error: any) {
             this.lastError = error;
@@ -348,10 +362,8 @@ export class Life360Handler {
      */
     async getCircles(): Promise<Life360.Circle[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(ENDPOINT.CIRCLES));
+            const response = await this.apiRequest(this.getApiRequestConfig(ENDPOINT.CIRCLES), "circles");
             
-            if ((!response.data) || (!response.data.circles)) throw new Error("Suspicious API response: Circles object is missing.");
-
             if (response.data.circles.length == 0) console.warn("No circles in your Life360.");
 
             return Life360.ParseCircles(response.data.circles);
@@ -392,9 +404,7 @@ export class Life360Handler {
      */
     async getCircleMembers(circleId: string): Promise<Life360.Member[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members`));
-
-            if ((!response.data) || (!response.data.members)) throw new Error("Suspicious API response: Members object is missing.");
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members`), "members");
 
             return Life360.ParseMembers(response.data.members);
         } catch (error) {
@@ -410,9 +420,7 @@ export class Life360Handler {
      */
     async getCircleMembersLocation(circleId: string): Promise<Life360.Location[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`));
-
-            if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Locations object is missing.");
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`), "locations");
 
             return Life360.ParseLocations(response.data.locations);
         } catch (error) {
@@ -435,9 +443,7 @@ export class Life360Handler {
                 "type": "location"
             };
 
-            const response = await this.apiRequest(requestConfig);
-
-            if ((!response.data) || (!response.data.requestId)) throw new Error("Suspicious API response: Object is missing.");
+            const response = await this.apiRequest(requestConfig, "requestId");
 
             return new Life360.LocationRequest(response.data);
         } catch (error) {
@@ -453,9 +459,7 @@ export class Life360Handler {
      */
     async getCirclePlaces(circleId: string): Promise<Life360.Place[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/places`));
-
-            if ((!response.data) || (!response.data.places)) throw new Error("Suspicious API response: Places object is missing.");
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/places`), "places");
 
             return Life360.ParsePlaces(response.data.places);
         } catch (error) {
@@ -494,6 +498,23 @@ export class Life360API extends Life360Handler {
     private msWaitForRetry = 1000;
     private maxTriesRequest = 3;
 
+    /**
+     * Creates a new advanced Life360 API handler class.
+     * 
+     * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` to login.
+     * 
+     * @param username          E-mail address for login
+     * @param password          Private and secret password
+     * @param phonenumber       Phonenumber w/o countrycode for login
+     * @param countryCode       Phonenumber's countrycode with the plus (+)
+     * @param deviceId          Unique device ID (optional)
+     * @param clientVersion     Life360 client version (optional)
+     * @param userAgent         Life360 HTTP user agent string (optional)
+     * @param apiBaseURL        Life360 API base URL, e.g. https://www.life360.com (optional) 
+     * @param autoReconnect     Set to `true` to let the handler automatically try to recconect after authorization issues.
+     * @param msWaitForRetry    Time to wait (ms) before trying a requst again after failure
+     * @param maxTriesRequest   Maximum amout of retries for a single request
+     */
     constructor(
         username?: string, 
         password?: string, 
@@ -529,11 +550,11 @@ export class Life360API extends Life360Handler {
         let myResponse: any = undefined;
         let tries = 0;
 
+        // Wrapper for automated retries for temp. failing queries
         do {
             try {
                 if (tries > 0) await sleep(this.msWaitForRetry);
                 tries++;
-                console.log(`API-Request #${tries} ...`);
 
                 //  Now call the super method!
                 myResponse = await super.apiRequest(requestConfig);
@@ -541,6 +562,7 @@ export class Life360API extends Life360Handler {
             } catch (error: any) {
                 myResponse = undefined;
 
+                //  Further actions depend on the status code
                 switch (error.status) {
                     case 403:
                         //  Access denied (Forbidden)
@@ -555,6 +577,9 @@ export class Life360API extends Life360Handler {
                         break;
                     case 404:
                         //  Not found
+                        break;
+                    case 406:
+                        //  Not acceptable
                         break;
                     default:
                         throw error;
