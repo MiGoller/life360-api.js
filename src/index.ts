@@ -1,5 +1,5 @@
 /*
- * life360api.js
+ * life360-api.js
  *
  * Author: MiGoller
  * 
@@ -8,7 +8,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { v4 as uuidv4} from "uuid";
+import { EventEmitter  } from "events";
 
 import * as Life360 from "./Life360Types";
 
@@ -28,9 +28,9 @@ const DEFAULT_CLIENT_VERSION = "22.6.0.532";
 const DEFAULT_USER_AGENT = "SafetyMapKoko";
 
 /**
- * Default Life360 API endpoint
+ * Default Life360 API base URL
  */
-const DEFAULT_API_ENDPOINT = "www.life360.com";
+const DEFAULT_API_BASE_URL = "https://www.life360.com";
 
 /**
  * The Life360 API URIs.
@@ -43,9 +43,55 @@ const ENDPOINT = {
 };
 
 /**
- * Hooks into Life360 API.
+ * Creates a random Life360 device ID.
+ * @returns Random Life360 device ID
  */
-export class Life360Handler {
+export function createLife360DeviceID(): string {
+    const bytes = Buffer.alloc(8);
+    for (let i = 0; i < 8; i++) {
+        bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return bytes.toString('hex');
+}
+
+/**
+ * Creates a status message from the Axios response of an API request
+ * @param response  The Axios response to parse 
+ * @returns Status object
+ */
+function _getStatusMessageFromResponse(response: AxiosResponse<any>): any {
+    const myError: any = {
+        status: response.status,
+        statusText: response.statusText,
+    };
+
+    if (response.data != undefined) {
+        if ((response.data+"").startsWith("")) {
+            myError.data = {
+                errorMessage: response.statusText,
+                url: `${response.config.baseURL}${response.config.url}`,
+                status: response.status
+            };
+        }
+        else {
+            myError.data = response.data;
+        }
+    }
+
+    return myError;
+}
+
+/**
+ * Sleep method
+ * @param ms Time to sleep in milliseconds
+ * @returns void
+ */
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Life360 API handler wrapper class.
+ */
+export class Life360Handler extends EventEmitter {
     private username: string | undefined;
     private password: string | undefined;
     private phonenumber: string | undefined;
@@ -54,7 +100,7 @@ export class Life360Handler {
     private deviceId = "";
     private clientVersion: string = DEFAULT_CLIENT_VERSION;
     private userAgent: string = DEFAULT_USER_AGENT;
-    private apiEndpoint: string = DEFAULT_API_ENDPOINT;
+    private apiBaseURL: string = DEFAULT_API_BASE_URL;
     private life360session: Life360.Session | undefined;
     private sessionCookies: { cookie: string, expiresAt: number, path: string }[] = [];
     private sessionCookieHeader = "";
@@ -73,7 +119,7 @@ export class Life360Handler {
      * @param deviceId      Unique device ID (optional)
      * @param clientVersion Life360 client version (optional)
      * @param userAgent     Life360 HTTP user agent string (optional)
-     * @param apiEndpoint   Life360 API endpoint, e.g. www.life360.com (optional)
+     * @param apiBaseURL    Life360 API base URL, e.g. https://www.life360.com (optional)
      */
     constructor(
         username?: string, 
@@ -83,7 +129,8 @@ export class Life360Handler {
         deviceId?: string, 
         clientVersion?: string, 
         userAgent?: string,
-        apiEndpoint?: string) {
+        apiBaseURL?: string) {
+        super();
         //  Check credentials
         if ((username && password) || (countryCode && phonenumber && password)) {
             //  Initialize properties
@@ -107,7 +154,7 @@ export class Life360Handler {
         }
 
         //  Generate temp. device ID?
-        this.deviceId = deviceId || uuidv4();
+        this.deviceId = deviceId || createLife360DeviceID();
 
         //  Set custom client version?
         this.clientVersion = clientVersion || DEFAULT_CLIENT_VERSION;
@@ -116,7 +163,7 @@ export class Life360Handler {
         this.userAgent = userAgent || DEFAULT_USER_AGENT;
 
         //  Set Life360 API endpoint
-        this.apiEndpoint = apiEndpoint || DEFAULT_API_ENDPOINT;
+        this.apiBaseURL = apiBaseURL || DEFAULT_API_BASE_URL;
     }
 
     /**
@@ -136,27 +183,20 @@ export class Life360Handler {
     }
 
     /**
-     * Get the full qualified API endpoint for a request.
-     * @param endpointPath The path to the API endpoint.
-     * @returns The full qualified API endpoint for a request
-     */
-    getApiEndpoint(endpointPath: string): string {
-        return `https://${this.apiEndpoint}/${endpointPath}`;
-    }
-
-    /**
      * Creates an Life360 API request configuration object for Axios
      * @param endpointPath The request's `endpoint path`
-     * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config).
+     * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config)
+     * @param apiBaseURL The Life360 API base URL or set to special URL e.g. `https://android.life360.com`
      * @returns An AxiosRequestConfig to match Life360 API requirements
      */
-    getApiRequestConfig(endpointPath: string, method = "get"): AxiosRequestConfig {
+    getApiRequestConfig(endpointPath: string, method = "get", apiBaseURL = this.apiBaseURL): AxiosRequestConfig {
         if (!endpointPath) throw new Error("endpointPath is missing or empty!");
         if (!this.isLoggedIn()) throw new Error("Not logged in. Please log in to Life360 first.");
 
         return {
             method: method,
-            url: this.getApiEndpoint(endpointPath),
+            baseURL: apiBaseURL,
+            url: endpointPath,
             headers: {
                 "Authorization": `${this.auth.token_type} ${this.auth.access_token}`,
                 "X-Device-ID": this.deviceId,
@@ -197,7 +237,7 @@ export class Life360Handler {
      * @param requestConfig An `AxiosRequestConfig`
      * @returns The API's response object
      */
-    private async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+    async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
         if (!requestConfig) throw new Error("requestConfig is missing or empty!");
         try {
             this.lastApiResponse = await axios.request(requestConfig);
@@ -205,7 +245,7 @@ export class Life360Handler {
         } catch (error: any) {
             this.lastError = error;
             if (error.response) 
-                throw new Error(`${error.response.status} - ${error.response.statusText}`);
+                throw _getStatusMessageFromResponse(error.response);
             else
                 throw error;
         }
@@ -213,7 +253,7 @@ export class Life360Handler {
 
     /**
      * Log in to the Life360 API
-     * @returns Life360 `Auth` object
+     * @returns Life360 `Session` object
      */
     async login(): Promise<Life360.Session> {
         //  Reset access token
@@ -236,7 +276,8 @@ export class Life360Handler {
 
         try {
             response = await axios.request({
-                url: this.getApiEndpoint(ENDPOINT.LOGIN),
+                baseURL: this.apiBaseURL,
+                url: ENDPOINT.LOGIN,
                 method: "POST",
                 data: authData,
                 headers: {
@@ -251,8 +292,10 @@ export class Life360Handler {
             this.lastApiResponse = response;
         } catch (error: any) { 
             this.lastError = error;
-            if (error.response) 
-                throw new Error(`${error.response.status} - ${error.response.statusText}`);
+            if (error.response) {
+                // throw new Error(`${error.response.status} - ${error.response.statusText}`);
+                throw _getStatusMessageFromResponse(error.response);
+            }
             else
                 throw error;
         }
@@ -273,6 +316,8 @@ export class Life360Handler {
 
         };
 
+        this.emit("loggedIn", this.life360session != undefined);
+
         // return this.auth;
         return this.life360session;
     }
@@ -289,6 +334,9 @@ export class Life360Handler {
         };
 
         this.life360session = undefined;
+
+        this.emit("loggedIn", this.life360session != undefined);
+        
         return true;
     }
 
@@ -441,5 +489,91 @@ export class Life360Handler {
             this.lastError = error;
             throw error;
         }
+    }
+}
+
+/**
+ * Advanced Life360 API handler class
+ */
+export class Life360API extends Life360Handler {
+    private autoReconnect = true;
+    private msWaitForRetry = 1000;
+    private maxTriesRequest = 3;
+
+    constructor(
+        username?: string, 
+        password?: string, 
+        phonenumber?: string, 
+        countryCode?: number, 
+        deviceId?: string, 
+        clientVersion?: string, 
+        userAgent?: string,
+        apiBaseURL?: string,
+        autoReconnect = true,
+        msWaitForRetry = 1000,
+        maxTriesRequest = 3) {
+        super(username, password, phonenumber,countryCode, deviceId,clientVersion, userAgent, apiBaseURL);
+        this.autoReconnect = autoReconnect;
+        this.msWaitForRetry = msWaitForRetry;
+        this.maxTriesRequest = maxTriesRequest;
+    }
+    
+    /**
+     * Runs a request against the Lif360 API
+     * 
+     * This method supports the `autoReconnect` feature and retries the requests a few times before failing.
+     * @param requestConfig An `AxiosRequestConfig`
+     * @returns The API's response object
+     */
+    async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+        if (!this.isLoggedIn() && this.autoReconnect) {
+            //  Try to reconnect (login) to the Life360 API
+            console.log("Reconnecting ...");
+            await this.login();
+        }
+
+        let myResponse: any = undefined;
+        let tries = 0;
+
+        do {
+            try {
+                if (tries > 0) await sleep(this.msWaitForRetry);
+                tries++;
+                console.log(`API-Request #${tries} ...`);
+
+                //  Now call the super method!
+                myResponse = await super.apiRequest(requestConfig);
+
+            } catch (error: any) {
+                myResponse = undefined;
+
+                switch (error.status) {
+                    case 403:
+                        //  Access denied (Forbidden)
+                        if (this.autoReconnect) {
+                            //  Try to reconnect (login) and try again
+                            this.logout();
+                        }
+                        else {
+                            //  Fail.
+                            tries = this.maxTriesRequest;
+                        }
+                        break;
+                    case 404:
+                        //  Not found
+                        break;
+                    default:
+                        throw error;
+                        break;
+                }
+            }
+        } while ((tries < this.maxTriesRequest) && (myResponse == undefined));
+        
+        if (myResponse == undefined) {
+            //  API request finally failed!
+            throw _getStatusMessageFromResponse(this.getLastError().response);
+        }
+
+        return myResponse;
     }
 }

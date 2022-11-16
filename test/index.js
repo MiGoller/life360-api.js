@@ -3,7 +3,7 @@
  * 
  * Author:  MiGoller
  * 
- * Copyright (c) 2021-2022 MiGoller
+ * Copyright (c) 2022 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -22,7 +22,17 @@ async function main() {
             console.log(process.env.LIFE360_USERNAME);
 
             //  Create Life360 client
-            const myClient = new life360.Life360Handler(
+            // const myClient = new life360.Life360Handler(
+            //     process.env.LIFE360_USERNAME || "",
+            //     process.env.LIFE360_PASSWORD || "",
+            //     process.env.LIFE360_PHONENUMBER || "",
+            //     process.env.LIFE360_COUNTRYCODE || "",
+            //     process.env.LIFE360_DEVICEID || "",
+            //     process.env.LIFE360_CLIENTVERSION || "",
+            //     process.env.LIFE360_USERAGENT || ""
+            // );
+
+            const myClient = new life360.Life360API(
                 process.env.LIFE360_USERNAME || "",
                 process.env.LIFE360_PASSWORD || "",
                 process.env.LIFE360_PHONENUMBER || "",
@@ -80,19 +90,38 @@ async function main() {
                                 console.log("- Request first person location update ...");
                                 console.dir({ "requestUserLocationUpdate": response }, { depth: 5 });
                             });
+                        })
+                        .catch(function(error) {
+                            //  Getting circle failed.
+                            console.log("Getting circle failed!");
+                            console.dir(error, { depth: 5 });
+                            process.exit(4);
                         });
                     }
+                })
+                .catch(function(error) {
+                    //  Getting circles failed.
+                    console.log("Getting circles failed!");
+                    console.dir(error, { depth: 5 });
+                    process.exit(3);
                 });
+            })
+            .catch(function(error) {
+                //  Login failed.
+                console.log("Login failed!");
+                console.dir(error, { depth: 5 });
+                process.exit(2);
             });
         } catch (error) {
             //  Failed to run tests.
-            console.error(error);
-            process.exit(1);
+            console.log("Failed to run tests!");
+            console.dir(error, { depth: 5 });
+            process.exit(2);
         }
     }
     else {
         console.error("You have to set essentials settings using environment variables!");
-        process.exit(2);
+        process.exit(1);
     }
 }
 

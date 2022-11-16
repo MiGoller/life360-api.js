@@ -1,3 +1,11 @@
+/*
+ * life360-api.js
+ *
+ * Author: MiGoller
+ * 
+ * Copyright (c) 2022 MiGoller
+ */
+
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
