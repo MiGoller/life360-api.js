@@ -46,6 +46,10 @@ main();
 
 ## Changelog
 
+### 0.3.0
+
+- (MiGoller) Many improvements regarding stability.
+
 ### 0.2.0
 
 - (MiGoller) [Add feature to get members' location](https://github.com/MiGoller/life360-api.js/issues/13)

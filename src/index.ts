@@ -1,21 +1,35 @@
 /*
- * life360api.js
+ * life360-api.js
  *
  * Author: MiGoller
  * 
- * Copyright (c) 2022 MiGoller
+ * Copyright (c) 2021-2022 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { v4 as uuidv4} from "uuid";
+
+import * as Life360 from "./Life360Types";
 
 /**
  * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
+const LIFE360_CLIENT_SECRET = "U3dlcUFOQWdFVkVoVWt1cGVjcmVrYXN0ZXFhVGVXckFTV2E1dXN3MzpXMnZBV3JlY2hhUHJlZGFoVVJhZ1VYYWZyQW5hbWVqdQ==";
+
+/**
+ * Default Life360 client version: Has to be identified and verified after Life360 publishes a new version of the mobile app!
+ */
 const DEFAULT_CLIENT_VERSION = "22.6.0.532";
+
+/**
+ * Default HTTP user agent string: Has to be identified and verified after Life360 publishes a new version of the mobile app!
+ */
 const DEFAULT_USER_AGENT = "SafetyMapKoko";
+
+/**
+ * Default Life360 API base URL
+ */
+const DEFAULT_API_BASE_URL = "https://www.life360.com";
 
 /**
  * The Life360 API URIs.
@@ -23,12 +37,58 @@ const DEFAULT_USER_AGENT = "SafetyMapKoko";
  * - circles URL
  */
 const ENDPOINT = {
-    "LOGIN": "https://api-cloudfront.life360.com/v3/oauth2/token.json",
-    "CIRCLES": "https://api-cloudfront.life360.com/v3/circles"
+    "LOGIN": "/v3/oauth2/token.json",
+    "CIRCLES": "/v3/circles"
 };
 
 /**
- * Hooks into Life360 API.
+ * Creates a random Life360 device ID.
+ * @returns Random Life360 device ID
+ */
+export function createLife360DeviceID(): string {
+    const bytes = Buffer.alloc(8);
+    for (let i = 0; i < 8; i++) {
+        bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return bytes.toString('hex');
+}
+
+/**
+ * Creates a status message from the Axios response of an API request
+ * @param response  The Axios response to parse 
+ * @returns Status object
+ */
+function _getStatusMessageFromResponse(response: AxiosResponse<any>): any {
+    const myError: any = {
+        status: response.status,
+        statusText: response.statusText,
+    };
+
+    if (response.data != undefined) {
+        if ((response.data+"").startsWith("")) {
+            myError.data = {
+                errorMessage: response.statusText,
+                url: `${response.config.baseURL}${response.config.url}`,
+                status: response.status
+            };
+        }
+        else {
+            myError.data = response.data;
+        }
+    }
+
+    return myError;
+}
+
+/**
+ * Sleep method
+ * @param ms Time to sleep in milliseconds
+ * @returns void
+ */
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Life360 API handler wrapper class.
  */
 export class Life360Handler {
     private username: string | undefined;
@@ -36,21 +96,39 @@ export class Life360Handler {
     private phonenumber: string | undefined;
     private countryCode: number | undefined;
     private auth: { access_token: string; token_type: string; };
-    private deviceId: string = uuidv4();
+    private deviceId = "";
     private clientVersion: string = DEFAULT_CLIENT_VERSION;
     private userAgent: string = DEFAULT_USER_AGENT;
+    private apiBaseURL: string = DEFAULT_API_BASE_URL;
+    private life360session: Life360.Session | undefined;
+    private sessionCookies: { cookie: string, expiresAt: number, path: string }[] = [];
+    private sessionCookieHeader = "";
+    private lastError: any | undefined = undefined;
+    private lastApiResponse: any = undefined;
 
     /**
      * Creates a new Life360 handler.
      * 
      * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` to login.
      * 
-     * @param username E-mail address for login
-     * @param password Private and secret password
-     * @param phonenumber Phonenumber w/o countrycode for login
-     * @param countryCode Phonenumber's countrycode with the plus (+)
+     * @param username      E-mail address for login
+     * @param password      Private and secret password
+     * @param phonenumber   Phonenumber w/o countrycode for login
+     * @param countryCode   Phonenumber's countrycode with the plus (+)
+     * @param deviceId      Unique device ID (optional)
+     * @param clientVersion Life360 client version (optional)
+     * @param userAgent     Life360 HTTP user agent string (optional)
+     * @param apiBaseURL    Life360 API base URL, e.g. https://www.life360.com (optional)
      */
-    constructor(username?: string, password?: string, phonenumber?: string, countryCode?: number, deviceId?: string, clientVersion?: string, userAgent?: string) {
+    constructor(
+        username?: string, 
+        password?: string, 
+        phonenumber?: string, 
+        countryCode?: number, 
+        deviceId?: string, 
+        clientVersion?: string, 
+        userAgent?: string,
+        apiBaseURL?: string) {
         //  Check credentials
         if ((username && password) || (countryCode && phonenumber && password)) {
             //  Initialize properties
@@ -63,6 +141,10 @@ export class Life360Handler {
                 access_token: "",
                 token_type: ""
             };
+
+            this.life360session = undefined;
+
+            this.sessionCookies = [];
         }
         else {
             // Too few credentials
@@ -70,41 +152,82 @@ export class Life360Handler {
         }
 
         //  Generate temp. device ID?
-        this.deviceId = deviceId || uuidv4();
-        // if (deviceId) {
-        //     this.deviceId = uuidParse(this.deviceId);
-        // }
-        // else {
-        //     this.deviceId = uuidv4();
-        // }
+        this.deviceId = deviceId || createLife360DeviceID();
 
         //  Set custom client version?
         this.clientVersion = clientVersion || DEFAULT_CLIENT_VERSION;
 
         //  Set user agent
         this.userAgent = userAgent || DEFAULT_USER_AGENT;
+
+        //  Set Life360 API endpoint
+        this.apiBaseURL = apiBaseURL || DEFAULT_API_BASE_URL;
+    }
+
+    /**
+     * Returns the last error object if any.
+     * @returns The last error object or undefined
+     */
+    getLastError(): any {
+        return this.lastError;
+    }
+
+    /**
+     * Returns the last Life360 API response.
+     * @returns The last API response
+     */
+    getLastApiResponse(): any {
+        return this.lastApiResponse;
     }
 
     /**
      * Creates an Life360 API request configuration object for Axios
-     * @param url The request's `url`
-     * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config).
+     * @param endpointPath The request's `endpoint path`
+     * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config)
+     * @param apiBaseURL The Life360 API base URL or set to special URL e.g. `https://android.life360.com`
      * @returns An AxiosRequestConfig to match Life360 API requirements
      */
-    getApiRequestConfig(url: string, method = "get"): AxiosRequestConfig {
-        if (!url) throw new Error("URL is missing or empty!");
+    getApiRequestConfig(endpointPath: string, method = "get", apiBaseURL = this.apiBaseURL): AxiosRequestConfig {
+        if (!endpointPath) throw new Error("endpointPath is missing or empty!");
         if (!this.isLoggedIn()) throw new Error("Not logged in. Please log in to Life360 first.");
 
         return {
             method: method,
-            url: url,
+            baseURL: apiBaseURL,
+            url: endpointPath,
             headers: {
                 "Authorization": `${this.auth.token_type} ${this.auth.access_token}`,
                 "X-Device-ID": this.deviceId,
-                "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`
+                "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`,
+                "Cookie": this.sessionCookieHeader
             },
             responseType: "json"
         }
+    }
+
+    /**
+     * Parses the `set-cookie` header from the Life360 API response
+     * @param cookiesHeaders An array of session cookies from the response
+     * @returns Session cookie for further requests
+     */
+    private parseLoginResponseCookies(cookiesHeaders: string[]): { cookie: string, expiresAt: number, path: string }[] {
+        const myCookies = [];
+        this.sessionCookies = [];
+        for (let index = 0; index < cookiesHeaders.length; index++) {
+            const cookieSettings = cookiesHeaders[index].split(";");
+            this.sessionCookies.push( {
+                cookie: cookieSettings[0].trim(),
+                expiresAt: Date.parse(cookieSettings[1].trim()),
+                path: cookieSettings[2].trim()
+            } );
+
+            myCookies.push(cookieSettings[0].trim());
+        }
+
+        //  Set session cookie header for further request.
+        this.sessionCookieHeader = myCookies.join(";");
+
+        return this.sessionCookies;
     }
 
     /**
@@ -112,13 +235,29 @@ export class Life360Handler {
      * @param requestConfig An `AxiosRequestConfig`
      * @returns The API's response object
      */
-    private async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+    async apiRequest(requestConfig: AxiosRequestConfig, checkResponseDataProperty?: string): Promise<AxiosResponse> {
         if (!requestConfig) throw new Error("requestConfig is missing or empty!");
         try {
-            return await axios.request(requestConfig);
+            this.lastApiResponse = await axios.request(requestConfig);
+
+            //  Check for required response data property?
+            if (checkResponseDataProperty != undefined) {
+                if ((!this.lastApiResponse.data) || (!this.lastApiResponse.data[checkResponseDataProperty])) {
+                    //  Hopefully this will be a suspicious API response missing the data.
+                    throw {
+                        status: 406,
+                        statusText: "Not Acceptable",
+                        data: this.lastApiResponse.data
+                    };
+                }
+            }
+
+            //  Return the response
+            return this.lastApiResponse;
         } catch (error: any) {
+            this.lastError = error;
             if (error.response) 
-                throw new Error(`${error.response.status} - ${error.response.statusText}`);
+                throw _getStatusMessageFromResponse(error.response);
             else
                 throw error;
         }
@@ -126,14 +265,16 @@ export class Life360Handler {
 
     /**
      * Log in to the Life360 API
-     * @returns Life360 `Auth` object
+     * @returns Life360 `Session` object
      */
-    async login(): Promise<any> {
+    async login(): Promise<Life360.Session> {
         //  Reset access token
         this.auth = {
             access_token: "",
             token_type: ""
         };
+
+        this.life360session = undefined;
 
         let response: any;
         
@@ -147,6 +288,7 @@ export class Life360Handler {
 
         try {
             response = await axios.request({
+                baseURL: this.apiBaseURL,
                 url: ENDPOINT.LOGIN,
                 method: "POST",
                 data: authData,
@@ -158,9 +300,14 @@ export class Life360Handler {
                 },
                 responseType: "json"
             });
+
+            this.lastApiResponse = response;
         } catch (error: any) { 
-            if (error.response) 
-                throw new Error(`${error.response.status} - ${error.response.statusText}`);
+            this.lastError = error;
+            if (error.response) {
+                // throw new Error(`${error.response.status} - ${error.response.statusText}`);
+                throw _getStatusMessageFromResponse(error.response);
+            }
             else
                 throw error;
         }
@@ -171,13 +318,18 @@ export class Life360Handler {
         }
         
         //  Login succeeded
+        this.parseLoginResponseCookies(response.headers["set-cookie"]);
+
+        this.life360session = new Life360.Session(response.data);
+
         this.auth = {
             access_token: response.data["access_token"],
             token_type: response.data["token_type"]
 
         };
 
-        return this.auth;
+        // return this.auth;
+        return this.life360session;
     }
 
     /**
@@ -191,6 +343,8 @@ export class Life360Handler {
             token_type: ""
         };
 
+        this.life360session = undefined;
+        
         return true;
     }
 
@@ -199,25 +353,24 @@ export class Life360Handler {
      * @returns 
      */
     isLoggedIn(): boolean {
-        return this.auth.access_token > "";
+        return (this.life360session != undefined) && (this.life360session.access_token > "");
     }
 
     /**
      * Get the logged in user's Life360 circles.
      * @returns Array of Life360 circle objects
      */
-    async getCircles(): Promise<any> {
+    async getCircles(): Promise<Life360.Circle[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(ENDPOINT.CIRCLES));
+            const response = await this.apiRequest(this.getApiRequestConfig(ENDPOINT.CIRCLES), "circles");
             
-            if ((!response.data) || (!response.data.circles)) throw new Error("Suspicious API response: Circles object is missing.");
-
             if (response.data.circles.length == 0) console.warn("No circles in your Life360.");
 
-            // console.log(response);
-            return response.data.circles;
+            return Life360.ParseCircles(response.data.circles);
+
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
     }
 
@@ -226,16 +379,21 @@ export class Life360Handler {
      * @param circleId The Life360 circle's unique identifier
      * @returns A Life360 circle object
      */
-    async getCircle(circleId: string): Promise<any> {
+    async getCircle(circleId: string): Promise<Life360.Circle> {
         try {
             const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}`));
 
             // console.log(response);
-            if (response.data) return response.data;
+            if (response.data) {
+                // return response.data;
+                const myCircle = new Life360.Circle(response.data);
+                return myCircle;
+            }
 
             throw new Error(JSON.stringify(response));
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
     }
 
@@ -244,18 +402,14 @@ export class Life360Handler {
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 member objects
      */
-    async getCircleMembers(circleId: string): Promise<any> {
+    async getCircleMembers(circleId: string): Promise<Life360.Member[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members`));
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members`), "members");
 
-            if ((!response.data) || (!response.data.members)) throw new Error("Suspicious API response: Members object is missing.");
-
-            return response.data.members;
-
-            // if (response.data) return response.data;
-            // throw new Error(JSON.stringify(response));
+            return Life360.ParseMembers(response.data.members);
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
     }
 
@@ -264,15 +418,14 @@ export class Life360Handler {
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 location objects
      */
-     async getCircleMembersLocation(circleId: string): Promise<any> {
+    async getCircleMembersLocation(circleId: string): Promise<Life360.Location[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`));
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/history`), "locations");
 
-            if ((!response.data) || (!response.data.locations)) throw new Error("Suspicious API response: Locations object is missing.");
-
-            return response.data.locations;
+            return Life360.ParseLocations(response.data.locations);
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
     }
 
@@ -282,7 +435,7 @@ export class Life360Handler {
      * @param userId The Life360 member's unique identifier
      * @returns `ìsPollable` and `requestId` .
      */
-    async requestUserLocationUpdate(circleId: string, userId: string): Promise<any> {
+    async requestUserLocationUpdate(circleId: string, userId: string): Promise<Life360.LocationRequest> {
         try {
             //  Build POST request config
             const requestConfig = this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/${userId}/request`, "post");
@@ -290,13 +443,12 @@ export class Life360Handler {
                 "type": "location"
             };
 
-            const response = await this.apiRequest(requestConfig);
+            const response = await this.apiRequest(requestConfig, "requestId");
 
-            if ((!response.data) || (!response.data.requestId)) throw new Error("Suspicious API response: Object is missing.");
-
-            return response.data;
+            return new Life360.LocationRequest(response.data);
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
     }
 
@@ -305,18 +457,142 @@ export class Life360Handler {
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 place objects
      */
-    async getCirclePlaces(circleId: string): Promise<any> {
+    async getCirclePlaces(circleId: string): Promise<Life360.Place[]> {
         try {
-            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/places`));
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/places`), "places");
 
-            if ((!response.data) || (!response.data.places)) throw new Error("Suspicious API response: Places object is missing.");
-
-            return response.data.places;
-            // // console.log(response);
-            // if (response.data) return response.data;
-            // throw new Error(JSON.stringify(response));
+            return Life360.ParsePlaces(response.data.places);
         } catch (error) {
-            return { error };
+            this.lastError = error;
+            throw error;
         }
+    }
+
+    /**
+     * Get the members' preferences for a circle
+     * @param circleId The Life360 circle's unique identifier
+     * @returns 
+     */
+    async getCircleMembersPreferences(circleId: string): Promise<Life360.MemberPreferences> {
+        try {
+            const response = await this.apiRequest(this.getApiRequestConfig(`${ENDPOINT.CIRCLES}/${circleId}/members/preferences`));
+
+            if (response.data) {
+                const myMembersPrefs= new Life360.MemberPreferences(response.data);
+                return myMembersPrefs;
+            }
+
+            throw new Error(JSON.stringify(response));
+        } catch (error) {
+            this.lastError = error;
+            throw error;
+        }
+    }
+}
+
+/**
+ * Advanced Life360 API handler class
+ */
+export class Life360API extends Life360Handler {
+    private autoReconnect = true;
+    private msWaitForRetry = 1000;
+    private maxTriesRequest = 3;
+
+    /**
+     * Creates a new advanced Life360 API handler class.
+     * 
+     * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` to login.
+     * 
+     * @param username          E-mail address for login
+     * @param password          Private and secret password
+     * @param phonenumber       Phonenumber w/o countrycode for login
+     * @param countryCode       Phonenumber's countrycode with the plus (+)
+     * @param deviceId          Unique device ID (optional)
+     * @param clientVersion     Life360 client version (optional)
+     * @param userAgent         Life360 HTTP user agent string (optional)
+     * @param apiBaseURL        Life360 API base URL, e.g. https://www.life360.com (optional) 
+     * @param autoReconnect     Set to `true` to let the handler automatically try to recconect after authorization issues.
+     * @param msWaitForRetry    Time to wait (ms) before trying a requst again after failure
+     * @param maxTriesRequest   Maximum amout of retries for a single request
+     */
+    constructor(
+        username?: string, 
+        password?: string, 
+        phonenumber?: string, 
+        countryCode?: number, 
+        deviceId?: string, 
+        clientVersion?: string, 
+        userAgent?: string,
+        apiBaseURL?: string,
+        autoReconnect = true,
+        msWaitForRetry = 1000,
+        maxTriesRequest = 3) {
+        super(username, password, phonenumber,countryCode, deviceId,clientVersion, userAgent, apiBaseURL);
+        this.autoReconnect = autoReconnect;
+        this.msWaitForRetry = msWaitForRetry;
+        this.maxTriesRequest = maxTriesRequest;
+    }
+    
+    /**
+     * Runs a request against the Lif360 API
+     * 
+     * This method supports the `autoReconnect` feature and retries the requests a few times before failing.
+     * @param requestConfig An `AxiosRequestConfig`
+     * @returns The API's response object
+     */
+    async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+        if (!this.isLoggedIn() && this.autoReconnect) {
+            //  Try to reconnect (login) to the Life360 API
+            console.log("Reconnecting ...");
+            await this.login();
+        }
+
+        let myResponse: any = undefined;
+        let tries = 0;
+
+        // Wrapper for automated retries for temp. failing queries
+        do {
+            try {
+                if (tries > 0) await sleep(this.msWaitForRetry);
+                tries++;
+
+                //  Now call the super method!
+                myResponse = await super.apiRequest(requestConfig);
+
+            } catch (error: any) {
+                myResponse = undefined;
+
+                //  Further actions depend on the status code
+                switch (error.status) {
+                    case 403:
+                        //  Access denied (Forbidden)
+                        if (this.autoReconnect) {
+                            //  Try to reconnect (login) and try again
+                            this.logout();
+                        }
+                        else {
+                            //  Fail.
+                            tries = this.maxTriesRequest;
+                        }
+                        break;
+                    case 404:
+                        //  Not found
+                        break;
+                    case 406:
+                        //  Not acceptable
+                        break;
+                    default:
+                        throw error;
+                        break;
+                }
+            }
+        } while ((tries < this.maxTriesRequest) && (myResponse == undefined));
+        
+        if (myResponse == undefined) {
+            //  API request finally failed!
+            throw _getStatusMessageFromResponse(this.getLastError().response);
+        }
+
+        return myResponse;
     }
 }
