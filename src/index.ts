@@ -8,7 +8,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { EventEmitter  } from "events";
 
 import * as Life360 from "./Life360Types";
 
@@ -91,7 +90,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 /**
  * Life360 API handler wrapper class.
  */
-export class Life360Handler extends EventEmitter {
+export class Life360Handler {
     private username: string | undefined;
     private password: string | undefined;
     private phonenumber: string | undefined;
@@ -130,7 +129,6 @@ export class Life360Handler extends EventEmitter {
         clientVersion?: string, 
         userAgent?: string,
         apiBaseURL?: string) {
-        super();
         //  Check credentials
         if ((username && password) || (countryCode && phonenumber && password)) {
             //  Initialize properties
@@ -316,8 +314,6 @@ export class Life360Handler extends EventEmitter {
 
         };
 
-        this.emit("loggedIn", this.life360session != undefined);
-
         // return this.auth;
         return this.life360session;
     }
@@ -334,8 +330,6 @@ export class Life360Handler extends EventEmitter {
         };
 
         this.life360session = undefined;
-
-        this.emit("loggedIn", this.life360session != undefined);
         
         return true;
     }
