@@ -120,7 +120,7 @@ export class Life360Handler {
      * @param userAgent     Life360 HTTP user agent string (optional)
      * @param apiBaseURL    Life360 API base URL, e.g. https://www.life360.com (optional)
      */
-    constructor(
+    constructor(options: {
         username?: string, 
         password?: string, 
         phonenumber?: string, 
@@ -128,40 +128,53 @@ export class Life360Handler {
         deviceId?: string, 
         clientVersion?: string, 
         userAgent?: string,
-        apiBaseURL?: string) {
-        //  Check credentials
-        if ((username && password) || (countryCode && phonenumber && password)) {
-            //  Initialize properties
-            this.username = username || "";
-            this.password = password || "";
-            this.phonenumber = phonenumber || "";
-            this.countryCode = countryCode || 1;
+        apiBaseURL?: string
+        session?: Life360.Session}) {
+        
+        //  Generate temp. device ID?
+        this.deviceId = options.deviceId || createLife360DeviceID();
+    
+        //  Set custom client version?
+        this.clientVersion = options.clientVersion || DEFAULT_CLIENT_VERSION;
+    
+        //  Set user agent
+        this.userAgent = options.userAgent || DEFAULT_USER_AGENT;
+    
+        //  Set Life360 API endpoint
+        this.apiBaseURL = options.apiBaseURL || DEFAULT_API_BASE_URL;
 
+        if (options.session) {
+            
+            this.life360session = new Life360.Session(options.session);
+
+            this.auth = {
+                access_token: options.session.access_token,
+                token_type: options.session.token_type
+            };
+
+        }
+
+        //  Check credentials
+        if ((options.username && options.password) || (options.countryCode && options.phonenumber && options.password)) {
+            //  Initialize properties
+            this.username = options.username || "";
+            this.password = options.password || "";
+            this.phonenumber = options.phonenumber || "";
+            this.countryCode = options.countryCode || 1;
+    
             this.auth = {
                 access_token: "",
                 token_type: ""
             };
-
+    
             this.life360session = undefined;
-
+    
             this.sessionCookies = [];
         }
         else {
             // Too few credentials
-            throw new Error("You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` to login.");
+            throw new Error("You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.");
         }
-
-        //  Generate temp. device ID?
-        this.deviceId = deviceId || createLife360DeviceID();
-
-        //  Set custom client version?
-        this.clientVersion = clientVersion || DEFAULT_CLIENT_VERSION;
-
-        //  Set user agent
-        this.userAgent = userAgent || DEFAULT_USER_AGENT;
-
-        //  Set Life360 API endpoint
-        this.apiBaseURL = apiBaseURL || DEFAULT_API_BASE_URL;
     }
 
     /**
@@ -325,7 +338,6 @@ export class Life360Handler {
         this.auth = {
             access_token: response.data["access_token"],
             token_type: response.data["token_type"]
-
         };
 
         // return this.auth;
@@ -515,7 +527,8 @@ export class Life360API extends Life360Handler {
      * @param msWaitForRetry    Time to wait (ms) before trying a requst again after failure
      * @param maxTriesRequest   Maximum amout of retries for a single request
      */
-    constructor(
+    
+    constructor(options: {
         username?: string, 
         password?: string, 
         phonenumber?: string, 
@@ -524,13 +537,16 @@ export class Life360API extends Life360Handler {
         clientVersion?: string, 
         userAgent?: string,
         apiBaseURL?: string,
-        autoReconnect = true,
-        msWaitForRetry = 1000,
-        maxTriesRequest = 3) {
-        super(username, password, phonenumber,countryCode, deviceId,clientVersion, userAgent, apiBaseURL);
-        this.autoReconnect = autoReconnect;
-        this.msWaitForRetry = msWaitForRetry;
-        this.maxTriesRequest = maxTriesRequest;
+        autoReconnect: boolean,
+        msWaitForRetry: number,
+        maxTriesRequest: number
+    }) {
+        //assign defaults
+        Object.assign({ autoReconnect: true, msWaitForRetry: 1000, maxTriesRequest: 3 }, options);
+        super(options);
+        this.autoReconnect = options.autoReconnect;
+        this.msWaitForRetry = options.msWaitForRetry;
+        this.maxTriesRequest = options.maxTriesRequest;
     }
     
     /**
