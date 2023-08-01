@@ -3,7 +3,7 @@
  *
  * Author: MiGoller
  * 
- * Copyright (c) 2021-2022 MiGoller
+ * Copyright (c) 2021-2023 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -14,7 +14,7 @@ import * as Life360 from "./Life360Types";
 /**
  * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const LIFE360_CLIENT_SECRET = "U3dlcUFOQWdFVkVoVWt1cGVjcmVrYXN0ZXFhVGVXckFTV2E1dXN3MzpXMnZBV3JlY2hhUHJlZGFoVVJhZ1VYYWZyQW5hbWVqdQ==";
+const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
 
 /**
  * Default Life360 client version: Has to be identified and verified after Life360 publishes a new version of the mobile app!
@@ -29,7 +29,7 @@ const DEFAULT_USER_AGENT = "SafetyMapKoko";
 /**
  * Default Life360 API base URL
  */
-const DEFAULT_API_BASE_URL = "https://www.life360.com";
+const DEFAULT_API_BASE_URL = "https://api-cloudfront.life360.com";
 
 /**
  * The Life360 API URIs.
@@ -293,7 +293,7 @@ export class Life360Handler {
                 method: "POST",
                 data: authData,
                 headers: {
-                    "Authorization": `Authorization: Basic ${LIFE360_CLIENT_SECRET}`,
+                    "Authorization": `Basic ${LIFE360_CLIENT_SECRET}`,
                     "Content-Type" : "application/json",
                     "X-Device-ID": this.deviceId,
                     "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`
