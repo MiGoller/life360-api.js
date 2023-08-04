@@ -26,17 +26,63 @@ async function main() {
             //     process.env.LIFE360_USERNAME || "",
             //     process.env.LIFE360_PASSWORD || "",
             //     process.env.LIFE360_PHONENUMBER || "",
-            //     process.env.LIFE360_COUNTRYCODE || "",
+            //     process.env.LIFE360_COUNTRYCODE || 1,
             //     process.env.LIFE360_DEVICEID || "",
             //     process.env.LIFE360_CLIENTVERSION || "",
             //     process.env.LIFE360_USERAGENT || ""
             // );
 
-            const myClient = new life360.Life360API({
+            // //  "Classic" Life360API v1 constructor
+            // const myClient = new life360.Life360API(
+            //     process.env.LIFE360_USERNAME || "",
+            //     process.env.LIFE360_PASSWORD || "",
+            //     process.env.LIFE360_PHONENUMBER || "",
+            //     process.env.LIFE360_COUNTRYCODE || 1,
+            //     process.env.LIFE360_DEVICEID || "",
+            //     process.env.LIFE360_CLIENTVERSION || "",
+            //     process.env.LIFE360_USERAGENT || ""
+            // );
+
+            // //  Life360API v2 constructor
+            // const myClient = new life360.Life360APIv2({
+            //     username: process.env.LIFE360_USERNAME || "",
+            //     password: process.env.LIFE360_PASSWORD || "",
+            //     phonenumber: process.env.LIFE360_PHONENUMBER || "",
+            //     countryCode: process.env.LIFE360_COUNTRYCODE || 1,
+            //     deviceId: process.env.LIFE360_DEVICEID || "",
+            //     clientVersion: process.env.LIFE360_CLIENTVERSION || "",
+            //     userAgent: process.env.LIFE360_USERAGENT || ""
+            // });
+
+            // //  Life360API v2 factory method from username and password
+            // const myClient = life360.Life360APIv2.fromUsername(
+            //     process.env.LIFE360_USERNAME,
+            //     process.env.LIFE360_PASSWORD, 
+            //     {
+            //         deviceId: process.env.LIFE360_DEVICEID || "",
+            //         clientVersion: process.env.LIFE360_CLIENTVERSION || "",
+            //         userAgent: process.env.LIFE360_USERAGENT || ""
+            //     }
+            // );
+
+            // //  Life360API v2 factory method from phonenumber and password
+            // const myClient = life360.Life360APIv2.fromPhonenumber(
+            //     process.env.LIFE360_COUNTRYCODE,
+            //     process.env.LIFE360_PHONENUMBER,
+            //     process.env.LIFE360_PASSWORD,
+            //     {
+            //         deviceId: process.env.LIFE360_DEVICEID || "",
+            //         clientVersion: process.env.LIFE360_CLIENTVERSION || "",
+            //         userAgent: process.env.LIFE360_USERAGENT || ""
+            //     }
+            // );
+
+            //  Life360API v2 factory method from connecttion settings object
+            const myClient = life360.Life360APIv2.fromConnectionSettings({
                 username: process.env.LIFE360_USERNAME || "",
                 password: process.env.LIFE360_PASSWORD || "",
                 phonenumber: process.env.LIFE360_PHONENUMBER || "",
-                countryCode: process.env.LIFE360_COUNTRYCODE || "",
+                countryCode: process.env.LIFE360_COUNTRYCODE || 1,
                 deviceId: process.env.LIFE360_DEVICEID || "",
                 clientVersion: process.env.LIFE360_CLIENTVERSION || "",
                 userAgent: process.env.LIFE360_USERAGENT || ""
@@ -45,9 +91,9 @@ async function main() {
             //  Login with supplied Life360 credentials (see conf.json)
             console.log("- Logging in ...");
             myClient.login()
-            .then(function(l360auth) {
+            .then(function(l360session) {
                 //  We're logged in
-                console.dir(l360auth, { depth: 5 });
+                console.dir(l360session, { depth: 5 });
 
                 //  Get Circles
                 console.log("- Getting circles ...");
@@ -105,6 +151,29 @@ async function main() {
                     console.dir(error, { depth: 5 });
                     process.exit(3);
                 });
+
+                //  Take existing session to create another client without login credentials.
+                // const anotherClient = life360.Life360APIv2.fromSession(l360session);
+                const anotherClient = life360.Life360APIv2.fromAuthToken(
+                    l360session.access_token,
+                    l360session.token_type
+                );
+
+                //  WARNING: DO NOT call the method `login()`. This will reset the session and tries to login with credentials.
+                //  Logging in with credentials would fail, because we did not provide any credentials to `anotherClient`.
+                // anotherClient.login()
+                anotherClient.getCircles()
+                .then(function(myCircles) {
+                    console.log("- Running with existing session from previous connection ...");
+                    console.dir({ "circles with previous session": myCircles }, { depth: 5 });
+                })
+                .catch(function(error) {
+                    //  Getting circles with existing session failed
+                    console.log("Getting circle with existing session failed!");
+                    console.dir(error, { depth: 5 });
+                    process.exit(5);
+                });
+
             })
             .catch(function(error) {
                 //  Login failed.

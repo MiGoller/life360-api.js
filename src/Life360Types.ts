@@ -3,7 +3,7 @@
  *
  * Author: MiGoller
  * 
- * Copyright (c) 2021-2022 MiGoller
+ * Copyright (c) 2021-2023 MiGoller
  */
 
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
