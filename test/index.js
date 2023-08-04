@@ -32,15 +32,15 @@ async function main() {
             //     process.env.LIFE360_USERAGENT || ""
             // );
 
-            const myClient = new life360.Life360API(
-                process.env.LIFE360_USERNAME || "",
-                process.env.LIFE360_PASSWORD || "",
-                process.env.LIFE360_PHONENUMBER || "",
-                process.env.LIFE360_COUNTRYCODE || "",
-                process.env.LIFE360_DEVICEID || "",
-                process.env.LIFE360_CLIENTVERSION || "",
-                process.env.LIFE360_USERAGENT || ""
-            );
+            const myClient = new life360.Life360API({
+                username: process.env.LIFE360_USERNAME || "",
+                password: process.env.LIFE360_PASSWORD || "",
+                phonenumber: process.env.LIFE360_PHONENUMBER || "",
+                countryCode: process.env.LIFE360_COUNTRYCODE || "",
+                deviceId: process.env.LIFE360_DEVICEID || "",
+                clientVersion: process.env.LIFE360_CLIENTVERSION || "",
+                userAgent: process.env.LIFE360_USERAGENT || ""
+            });
 
             //  Login with supplied Life360 credentials (see conf.json)
             console.log("- Logging in ...");
