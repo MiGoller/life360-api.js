@@ -146,6 +146,7 @@ export class Life360Handler {
      * 
      * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.
      * 
+     * @constructor
      * @param username      E-mail address for login
      * @param password      Private and secret password
      * @param phonenumber   Phonenumber w/o countrycode for login
@@ -179,17 +180,6 @@ export class Life360Handler {
         //  Set Life360 API endpoint
         this.apiBaseURL = options.apiBaseURL || DEFAULT_API_BASE_URL;
 
-        // if (options.session) {
-            
-        //     this.life360session = new Life360.Session(options.session);
-
-        //     this.auth = {
-        //         access_token: options.session.access_token,
-        //         token_type: options.session.token_type
-        //     };
-
-        // }
-
         //  Check credentials and session
         if ((options.username && options.password) || (options.countryCode && options.phonenumber && options.password) || options.session) {
             //  Initialize properties
@@ -198,19 +188,10 @@ export class Life360Handler {
             this.phonenumber = options.phonenumber || "";
             this.countryCode = options.countryCode || 1;
     
-            // this.auth = {
-            //     access_token: "",
-            //     token_type: ""
-            // };
-    
-            // this.life360session = undefined;
-
             //  Reuse previous session?
             if (options.session) {
                 //  Reuse previous session.
                 //  WARNING: The session might be outdated!
-                // console.debug("Reuse previous session.");
-
                 this.life360session = new Life360.Session(options.session);
 
                 this.auth = {
@@ -235,64 +216,6 @@ export class Life360Handler {
             throw new Error("You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.");
         }
     }
-    // constructor(username?: string, 
-    //     password?: string, 
-    //     phonenumber?: string, 
-    //     countryCode?: number, 
-    //     deviceId?: string, 
-    //     clientVersion?: string, 
-    //     userAgent?: string,
-    //     apiBaseURL?: string,
-    //     session?: Life360.Session) {
-        
-    //     //  Generate temp. device ID?
-    //     this.deviceId = deviceId || createLife360DeviceID();
-    
-    //     //  Set custom client version?
-    //     this.clientVersion = clientVersion || DEFAULT_CLIENT_VERSION;
-    
-    //     //  Set user agent
-    //     this.userAgent = userAgent || DEFAULT_USER_AGENT;
-    
-    //     //  Set Life360 API endpoint
-    //     this.apiBaseURL = apiBaseURL || DEFAULT_API_BASE_URL;
-
-    //     //  Check credentials or session
-    //     if ((username && password) || (countryCode && phonenumber && password) || session) {
-    //         //  Initialize properties
-    //         this.username = username || "";
-    //         this.password = password || "";
-    //         this.phonenumber = phonenumber || "";
-    //         this.countryCode = countryCode || 1;
-    
-    //         //  Reuse previous session?
-    //         if (session) {
-    //             //  Reuse previous session.
-    //             //  WARNING: The session might be outdated!
-    //             this.life360session = new Life360.Session(session);
-    
-    //             this.auth = {
-    //                 access_token: session.access_token,
-    //                 token_type: session.token_type
-    //             };
-    //         }
-    //         else {
-    //             //  No session and no authentication token
-    //             this.auth = {
-    //                 access_token: "",
-    //                 token_type: ""
-    //             };
-        
-    //             this.life360session = undefined;
-    //         }
-    
-    //         this.sessionCookies = [];
-    //     }
-    //     else {
-    //         // Too few credentials
-    //         throw new Error("You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.");
-    //     }
-    // }
 
     /**
      * Returns the current Life360 session cookies
@@ -320,6 +243,7 @@ export class Life360Handler {
 
     /**
      * Creates an Life360 API request configuration object for Axios
+     * @function
      * @param endpointPath The request's `endpoint path`
      * @param method The axios request method; defaults to `get` (s. https://axios-http.com/docs/req_config)
      * @param apiBaseURL The Life360 API base URL or set to special URL e.g. `https://android.life360.com`
@@ -345,6 +269,7 @@ export class Life360Handler {
 
     /**
      * Parses the `set-cookie` header from the Life360 API response
+     * @function
      * @param cookiesHeaders An array of session cookies from the response
      * @returns Session cookie for further requests
      */
@@ -370,6 +295,7 @@ export class Life360Handler {
 
     /**
      * Runs a request against the Lif360 API
+     * @function
      * @param requestConfig An `AxiosRequestConfig`
      * @returns The API's response object
      */
@@ -403,6 +329,7 @@ export class Life360Handler {
 
     /**
      * Log in to the Life360 API
+     * @function
      * @returns Life360 `Session` object
      */
     async login(): Promise<Life360.Session> {
@@ -471,6 +398,7 @@ export class Life360Handler {
 
     /**
      * Log out from the Life360 API
+     * @function
      * @returns true
      */
     logout(): boolean {
@@ -487,6 +415,7 @@ export class Life360Handler {
 
     /**
      * Check if the current handler is logged in
+     * @function
      * @returns 
      */
     isLoggedIn(): boolean {
@@ -495,6 +424,7 @@ export class Life360Handler {
 
     /**
      * Get the logged in user's Life360 circles.
+     * @function
      * @returns Array of Life360 circle objects
      */
     async getCircles(): Promise<Life360.Circle[]> {
@@ -513,6 +443,7 @@ export class Life360Handler {
 
     /**
      * Get a Life360 circle
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @returns A Life360 circle object
      */
@@ -536,6 +467,7 @@ export class Life360Handler {
 
     /**
      * Get a Life360 circle's members
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 member objects
      */
@@ -552,6 +484,7 @@ export class Life360Handler {
 
     /**
      * Get a Life360 circle's members' location data.
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 location objects
      */
@@ -568,6 +501,7 @@ export class Life360Handler {
 
     /**
      * Request a location update for a circle member
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @param userId The Life360 member's unique identifier
      * @returns `ìsPollable` and `requestId` .
@@ -591,6 +525,7 @@ export class Life360Handler {
 
     /**
      * Get a Life360 circle's places
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @returns Array of Life360 place objects
      */
@@ -607,6 +542,7 @@ export class Life360Handler {
 
     /**
      * Get the members' preferences for a circle
+     * @function
      * @param circleId The Life360 circle's unique identifier
      * @returns 
      */
@@ -629,6 +565,7 @@ export class Life360Handler {
 
 /**
  * Advanced Life360 API handler class v2
+ * @class
  */
 export class Life360APIv2 extends Life360Handler {
     private autoReconnect = true;
@@ -640,6 +577,7 @@ export class Life360APIv2 extends Life360Handler {
      * 
      * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.
      * 
+     * @constructor
      * @param username          E-mail address for login
      * @param password          Private and secret password
      * @param phonenumber       Phonenumber w/o countrycode for login
@@ -664,8 +602,6 @@ export class Life360APIv2 extends Life360Handler {
         this.autoReconnect = options.autoReconnect || DEFAULT_AUTORECONNECT;
         this.msWaitForRetry = options.msWaitForRetry || DEFAULT_MSWAITFORRETRY;
         this.maxTriesRequest = options.maxTriesRequest || DEFAULT_MAXRETRIESREQUEST;
-
-        // console.debug(options);
     }
     
     /**
@@ -683,6 +619,7 @@ export class Life360APIv2 extends Life360Handler {
     /**
      * Factory method to create a Life360API v2 instance from an existing session
      * @static
+     * @function
      * @param session           Life360 session e.g. previous session object
      * @param options           Life360 connection settings (optional)
      * @returns                 Life360API v2 instance
@@ -698,6 +635,7 @@ export class Life360APIv2 extends Life360Handler {
     /**
      * Factory method to create a Life360API v2 instance from an existing authentication token
      * @static
+     * @function
      * @param authToken         Life360 authenticaton token
      * @param token_type        Token type (optional, defaults to `Bearer`)
      * @param options           Life360 connection settings (optional)
@@ -718,6 +656,7 @@ export class Life360APIv2 extends Life360Handler {
     /**
      * Factory method to create a Life360API v2 instance from username (e-mail) and password
      * @static
+     * @function
      * @param username          E-mail address for login
      * @param password          Private and secret password
      * @param options           Life360 connection settings (optional)
@@ -738,6 +677,7 @@ export class Life360APIv2 extends Life360Handler {
     /**
      * Factory method to create a Life360API v2 instance from phonenumber and password
      * @static
+     * @function
      * @param countryCode       Phonenumber's countrycode with the plus (+)
      * @param phonenumber       Phonenumber w/o countrycode for login
      * @param password          Private and secret password
@@ -761,6 +701,7 @@ export class Life360APIv2 extends Life360Handler {
     /**
      * Factory method to create a Life360API v2 instance from Life360API v1 paramater block
      * @static
+     * @function
      * @param username          E-mail address for login
      * @param password          Private and secret password
      * @param phonenumber       Phonenumber w/o countrycode for login
@@ -810,6 +751,7 @@ export class Life360APIv2 extends Life360Handler {
      * Runs a request against the Lif360 API
      * 
      * This method supports the `autoReconnect` feature and retries the requests a few times before failing.
+     * @function
      * @param requestConfig An `AxiosRequestConfig`
      * @returns The API's response object
      */
@@ -873,17 +815,15 @@ export class Life360APIv2 extends Life360Handler {
 /**
  * Advanced Life360 API handler class v1
  * @deprecated since v0.3.1 . Switch to Life360v2 instead.
+ * @class
  */
 export class Life360API extends Life360APIv2 {
-    // private autoReconnect = true;
-    // private msWaitForRetry = 1000;
-    // private maxTriesRequest = 3;
-
     /**
      * Creates a new advanced Life360 API handler class.
      * 
      * You MUST provide `username` and `password` *OR* `countryCode`, `phonenumber` and `password` *OR* `session` to login.
      * 
+     * @constructor
      * @param username          E-mail address for login
      * @param password          Private and secret password
      * @param phonenumber       Phonenumber w/o countrycode for login
@@ -910,11 +850,6 @@ export class Life360API extends Life360APIv2 {
         msWaitForRetry = 1000,
         maxTriesRequest = 3,
         session?: Life360.Session) {
-        // super(username, password, phonenumber,countryCode, deviceId,clientVersion, userAgent, apiBaseURL,session);
-        // this.autoReconnect = autoReconnect;
-        // this.msWaitForRetry = msWaitForRetry;
-        // this.maxTriesRequest = maxTriesRequest;
-
         super({
             username: username,
             password: password,
@@ -930,98 +865,4 @@ export class Life360API extends Life360APIv2 {
             session: session
         });
     }
-    
-    // public static fromSession(
-    //     session: Life360.Session,
-    //     username?: string, 
-    //     password?: string, 
-    //     phonenumber?: string, 
-    //     countryCode?: number, 
-    //     deviceId?: string, 
-    //     clientVersion?: string, 
-    //     userAgent?: string,
-    //     apiBaseURL?: string,
-    //     autoReconnect = true,
-    //     msWaitForRetry = 1000,
-    //     maxTriesRequest = 3): Life360API {
-    //     const cls = new Life360API(
-    //         username, 
-    //         password, 
-    //         phonenumber, 
-    //         countryCode, 
-    //         deviceId, 
-    //         clientVersion, 
-    //         userAgent, 
-    //         apiBaseURL, 
-    //         autoReconnect, 
-    //         msWaitForRetry, 
-    //         maxTriesRequest, 
-    //         session);
-    //     return cls;
-    // }
-
-    
-
-    // /**
-    //  * Runs a request against the Lif360 API
-    //  * 
-    //  * This method supports the `autoReconnect` feature and retries the requests a few times before failing.
-    //  * @param requestConfig An `AxiosRequestConfig`
-    //  * @returns The API's response object
-    //  */
-    // async apiRequest(requestConfig: AxiosRequestConfig): Promise<AxiosResponse> {
-    //     if (!this.isLoggedIn() && this.autoReconnect) {
-    //         //  Try to reconnect (login) to the Life360 API
-    //         console.log("Reconnecting ...");
-    //         await this.login();
-    //     }
-
-    //     let myResponse: any = undefined;
-    //     let tries = 0;
-
-    //     // Wrapper for automated retries for temp. failing queries
-    //     do {
-    //         try {
-    //             if (tries > 0) await sleep(this.msWaitForRetry);
-    //             tries++;
-
-    //             //  Now call the super method!
-    //             myResponse = await super.apiRequest(requestConfig);
-
-    //         } catch (error: any) {
-    //             myResponse = undefined;
-
-    //             //  Further actions depend on the status code
-    //             switch (error.status) {
-    //                 case 403:
-    //                     //  Access denied (Forbidden)
-    //                     if (this.autoReconnect) {
-    //                         //  Try to reconnect (login) and try again
-    //                         this.logout();
-    //                     }
-    //                     else {
-    //                         //  Fail.
-    //                         tries = this.maxTriesRequest;
-    //                     }
-    //                     break;
-    //                 case 404:
-    //                     //  Not found
-    //                     break;
-    //                 case 406:
-    //                     //  Not acceptable
-    //                     break;
-    //                 default:
-    //                     throw error;
-    //                     break;
-    //             }
-    //         }
-    //     } while ((tries < this.maxTriesRequest) && (myResponse == undefined));
-        
-    //     if (myResponse == undefined) {
-    //         //  API request finally failed!
-    //         throw _getStatusMessageFromResponse(this.getLastError().response);
-    //     }
-
-    //     return myResponse;
-    // }
 }

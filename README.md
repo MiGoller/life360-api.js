@@ -1,6 +1,6 @@
 # life360-api.js
 
-An unofficial client for the Life360 API.
+An open source client for the Life360 API.
 
 ## Features
 
@@ -12,7 +12,7 @@ An unofficial client for the Life360 API.
 ## Install
 
 ```bash
-$ npm add life360-api.js
+npm add life360-api.js
 ```
 
 ## Quickstart
@@ -46,6 +46,14 @@ main();
 
 ## Changelog
 
+### 0.4.0
+
+- Implemented [Kenny Harrer](https://github.com/KennyHarrer)'s suggestion to [log in using saved sessions](https://github.com/MiGoller/life360-api.js/issues/19)
+
+### 0.3.1
+
+- (MiGoller) Fix for [Life360 API changes](https://github.com/MiGoller/life360-api.js/issues/22)
+
 ### 0.3.0
 
 - (MiGoller) Many improvements regarding stability.
@@ -75,7 +83,7 @@ main();
 
 ### MIT License
 
-Copyright (c) 2021 MiGoller (https://github.com/MiGoller/)
+Copyright (c) 2021-2023 [MiGoller](https://github.com/MiGoller/)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
