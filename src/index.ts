@@ -14,17 +14,17 @@ import * as Life360 from "./Life360Types";
 /**
  * Hard-coded "CLIENT_SECRET": Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const LIFE360_CLIENT_SECRET = "YnJ1czR0ZXZhcHV0UmVadWNydUJSVXdVYnJFTUVDN1VYZTJlUEhhYjpSdUt1cHJBQ3JhbWVzV1UydVRyZVF1bXVtYTdhemFtQQ==";
+const LIFE360_CLIENT_SECRET = "Y2F0aGFwYWNyQVBoZUtVc3RlOGV2ZXZldnVjSGFmZVRydVl1ZnJhYzpkOEM5ZVlVdkE2dUZ1YnJ1SmVnZXRyZVZ1dFJlQ1JVWQ==";
 
 /**
  * Default Life360 client version: Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const DEFAULT_CLIENT_VERSION = "22.6.0.532";
+const DEFAULT_CLIENT_VERSION = "23.49.0 android";
 
 /**
  * Default HTTP user agent string: Has to be identified and verified after Life360 publishes a new version of the mobile app!
  */
-const DEFAULT_USER_AGENT = "SafetyMapKoko";
+const DEFAULT_USER_AGENT = "com.life360.android.safetymapd/KOKO";
 
 /**
  * Default Life360 API base URL
@@ -37,7 +37,7 @@ const DEFAULT_API_BASE_URL = "https://api-cloudfront.life360.com";
  * - circles URL
  */
 const ENDPOINT = {
-    "LOGIN": "/v3/oauth2/token.json",
+    "LOGIN": "/v3/oauth2/token",
     "CIRCLES": "/v3/circles"
 };
 
@@ -199,7 +199,9 @@ export class Life360Handler {
                 "Authorization": `${this.auth.token_type} ${this.auth.access_token}`,
                 "X-Device-ID": this.deviceId,
                 "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`,
-                "Cookie": this.sessionCookieHeader
+                "Accept": "application/json",
+                "Cache-Control": "no-cache",
+                "Cookie": this.sessionCookieHeader,  
             },
             responseType: "json"
         }
@@ -283,7 +285,7 @@ export class Life360Handler {
             username: this.username,
             password: this.password,
             countryCode: this.countryCode,
-            phone: this.phonenumber
+            phone: this.phonenumber,
         };
 
         try {
@@ -296,7 +298,9 @@ export class Life360Handler {
                     "Authorization": `Basic ${LIFE360_CLIENT_SECRET}`,
                     "Content-Type" : "application/json",
                     "X-Device-ID": this.deviceId,
-                    "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`
+                    "User-Agent": `${this.userAgent}/${this.clientVersion}/${this.deviceId}`,
+                    "Accept": "application/json",
+                    "Cache-Control": "no-cache",
                 },
                 responseType: "json"
             });

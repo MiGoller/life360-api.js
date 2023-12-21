@@ -46,6 +46,16 @@ main();
 
 ## Changelog
 
+<!--
+  Placeholder for the next version (at the beginning of the line):
+  ### **WORK IN PROGRESS**
+-->
+### **WORK IN PROGRESS**
+
+- Added mandatory headers for Life360 API requests
+- Switched user-agent from iOS to Android
+- Updated client secret
+
 ### 0.3.0
 
 - (MiGoller) Many improvements regarding stability.
